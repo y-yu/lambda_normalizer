@@ -1,0 +1,26 @@
+.PHONY: clean
+
+SRC_DIR = .
+USE_OCAMLFIND = true
+OCAMLPACKS[] =
+
+PROGRAM = normalizer
+NATIVE_ENABLED = false
+BYTE_ENABLED = true
+OCAMLFLAGS = 
+
+FILES[] = $(removesuffix $(filter %.ml, $(ls R, $(SRC_DIR))))
+GENERATED_FILES[] = lexer.ml parser.mli parser.ml
+OCAMLLINK = $(OCAMLMKTOP) -custom
+
+OCamlGeneratedFiles($(GENERATED_FILES))
+
+OCamlProgram($(PROGRAM), $(FILES) lexer parser)
+
+clean:
+  rm -rf *.cmx *.cmxa *.cmo *.cmi *.a *.o *.out *.run *~ *.annot
+  rm -rf $(GENERATED_FILES)
+  rm -f $(PROGRAM)
+  rm -f $(PROGRAM).opt
+
+.DEFAULT: $(PROGRAM)
