@@ -68,22 +68,27 @@ let rec subst j s = (function
 |   Fun nt  ->  (Fun (subst (j + 1) (shift 0 1 s) nt))
 |   App(nt1, nt2) -> (App ((subst j s nt1), (subst j s nt2))))
 
-let rec beta_reduction i term =
-    if i > 100 then term
-    else
-        match term with
-            Index i -> Index i
-        |   Fun  nt -> (Fun (beta_reduction (i + 1) nt))
-        |   App(nt1, nt2) ->
-                let v    = beta_reduction (i + 1) nt2 in
-                let nt11 = beta_reduction (i + 1) nt1 in
-                (match nt11 with
-                    Fun nt ->
-                        beta_reduction (i + 1) (shift 0 (-1) (subst 0 (shift 0 1 v) nt))
-                |   _ -> 
-                        (App ((beta_reduction (i + 1) nt11), v)))
+let beta_reduction term =
+    let rec br path term =
+        if (List.mem term path) || (List.length path) > 100 then (term, path)
+        else
+            match term with
+                Index i -> (Index i, path)
+            |   Fun  nt ->
+                    let (t, p) = br (term::path) nt in
+                    ((Fun t), p)
+            |   App(nt1, nt2) ->
+                    let (v, p1)    = br (term::path) nt2 in
+                    let (nt11, p2) = br p1 nt1 in
+                    (match nt11 with
+                        Fun nt ->
+                            br p2 (shift 0 (-1) (subst 0 (shift 0 1 v) nt))
+                    |   _ ->
+                            ((App (nt11, v)), p2) )
+    in
+    fst (br [] term)
 
 let normalizer term =
     let context  = freevar term in
     let nameless = removevar context term in
-    restorevar context (beta_reduction 0 nameless);;
+    restorevar context (beta_reduction nameless)
